@@ -21,7 +21,7 @@ app.use(
 
 // mongodb
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.dam4d01.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -53,6 +53,17 @@ async function run() {
         }
         const result = await cartCollection.insertOne(doc);
         res.send(result)
+    })
+
+    app.delete('/cart/:id',async(req,res)=>{
+      const query = {_id: new ObjectId(req.params.id)}
+      const result = await cartCollection.deleteOne(query)
+      res.send(result)
+    })
+
+    app.delete('/cart',async(req,res)=>{
+      const result = await cartCollection.deleteMany({"userEmail" : req.query.email})
+      res.send(result)
     })
 
     app.get('/cart/:email',async(req,res)=>{
