@@ -10,6 +10,7 @@ app.use(
     cors({
       origin: [
         "http://localhost:5174",
+        "http://localhost:5173",
         // "https://cardoctor-bd.web.app",
         // "https://cardoctor-bd.firebaseapp.com",
       ]
@@ -41,6 +42,7 @@ async function run() {
     const medicineCollection = client.db('HealXDB').collection('medicine');
     const cartCollection = client.db('HealXDB').collection('cart');
     const usersCollection = client.db('HealXDB').collection('users');
+    const categoryCollection = client.db('HealXDB').collection('category');
 
 
     //    Users Api       //
@@ -78,6 +80,15 @@ async function run() {
       }
       const result = await usersCollection.updateOne(filter,doc)
       res.send(result)
+    })
+
+    // Category APi 
+
+    app.post('/category',async(req,res)=>{
+      const categoryInfo = req.body
+      const result = await categoryCollection.insertOne(categoryInfo)
+      res.send(result)
+      
     })
 
 
