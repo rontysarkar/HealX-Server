@@ -9,7 +9,7 @@ app.use(express.json())
 app.use(
     cors({
       origin: [
-        "http://localhost:5173",
+        "http://localhost:5174",
         // "https://cardoctor-bd.web.app",
         // "https://cardoctor-bd.firebaseapp.com",
       ]
@@ -43,6 +43,8 @@ async function run() {
     const usersCollection = client.db('HealXDB').collection('users');
 
 
+    //    Users Api       //
+
     app.get("/users",async(req,res)=>{
       const result = await usersCollection.find().toArray()
       res.send(result)
@@ -59,10 +61,36 @@ async function run() {
       res.send(result)
     })
 
+    app.delete('/users/:id',async(req,res)=>{
+      const query = {_id : new ObjectId(req.params.id)}
+      const result = await usersCollection.deleteOne(query)
+      res.send(result)
+        
+    })
+
+    app.patch('/users',async(req,res)=>{
+      const user = req.body
+      const filter = {email:user.email}
+      const doc = {
+        $set:{
+          role:user.role
+        }
+      }
+      const result = await usersCollection.updateOne(filter,doc)
+      res.send(result)
+    })
+
+
+    //       Medicine api    //
+
+
     app.get('/medicines',async(req,res)=>{
         const result = await medicineCollection.find().toArray()
         res.send(result)
     })
+
+
+    //  Cart API  ///
 
     app.post('/cart',async(req,res)=>{
         const data = req.body
