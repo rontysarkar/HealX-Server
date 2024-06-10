@@ -84,11 +84,22 @@ async function run() {
 
     // Category APi 
 
+    app.get('/category',async(req,res)=>{
+      const result = await categoryCollection.find().toArray()
+      res.send(result)
+    })
+
     app.post('/category',async(req,res)=>{
       const categoryInfo = req.body
       const result = await categoryCollection.insertOne(categoryInfo)
       res.send(result)
       
+    })
+
+    app.delete('/category/:id',async(req,res)=>{
+      const query = {_id: new ObjectId(req.params.id)}
+      const result = await categoryCollection.deleteOne(query)
+      res.send(result)
     })
 
 
