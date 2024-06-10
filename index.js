@@ -44,6 +44,15 @@ async function run() {
 
     //    Users Api       //
 
+    app.get('/users/:email',async(req,res)=>{
+      const query = {email: req.params.email}
+      const options = {
+        projection: { _id: 0, role: 1, }
+      }
+      const result = await usersCollection.findOne(query,options)
+      res.send(result)
+    })
+
     app.get("/users", async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result);
@@ -61,6 +70,7 @@ async function run() {
     });
 
     app.delete("/users/:id", async (req, res) => {
+      console.log(req.params.id,"pararmraoig")
       const query = { _id: new ObjectId(req.params.id) };
       const result = await usersCollection.deleteOne(query);
       res.send(result);
@@ -77,6 +87,8 @@ async function run() {
       const result = await usersCollection.updateOne(filter, doc);
       res.send(result);
     });
+
+
 
     // Category APi
 
@@ -133,6 +145,15 @@ async function run() {
       const result = await medicineCollection.find().toArray();
       res.send(result);
     });
+
+    app.post('/medicines',async(req,res)=>{
+      const data = req.body;
+      const doc = {
+        ...data
+      }
+      const result = await medicineCollection.insertOne(doc);
+      res.send(result)
+    })
 
     //  Cart API  ///
 
