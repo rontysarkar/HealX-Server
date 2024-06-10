@@ -121,6 +121,15 @@ async function run() {
       res.send(result);
     });
 
+    app.post("/advertise",async(req,res)=>{
+      const data = req.body;
+      const doc = {
+        ...data
+      }
+      const result = await advertiseCollection.insertOne(doc)
+      res.send(result)
+    })
+
     app.patch("/advertise", async (req, res) => {
       const data = req.body;
       const filter = { _id: new ObjectId(data.id) };
@@ -152,6 +161,12 @@ async function run() {
         ...data
       }
       const result = await medicineCollection.insertOne(doc);
+      res.send(result)
+    })
+
+    app.delete('/medicine/:id',async(req,res)=>{
+      const query = {_id: new ObjectId(req.params.id)}
+      const result = await medicineCollection.deleteOne(query)
       res.send(result)
     })
 
