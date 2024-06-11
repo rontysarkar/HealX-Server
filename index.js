@@ -1,6 +1,8 @@
 const express = require("express");
 const cors = require("cors");
+const jwt = require('jsonwebtoken');
 require("dotenv").config();
+
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -16,6 +18,12 @@ app.use(
     ],
   })
 );
+
+
+
+
+
+
 
 // mongodb
 
@@ -42,6 +50,38 @@ async function run() {
     const categoryCollection = client.db("HealXDB").collection("category");
     const advertiseCollection = client.db("HealXDB").collection("advertise");
 
+
+    //  JWT toke api 
+
+    app.post('/jwt',async(req,res)=>{
+      const user = req.body;
+      const token = jwt.sign(user,process.env.SECRET_TOKEN_KEY,{expiresIn: '1h'});
+      res.send({token})
+    })
+
+
+
+    //  verify meddle ware
+
+    const verifyToken = (req,res,next) =>{
+      console.log('inside verify token ', req.headers.authorization.split(' ')[1])
+      if(!req.headers.authorization){
+        return res.status(401).send({message:'forbidden access'})
+      }
+      const token = req.headers.authorization.split(' ')[1];
+      jwt.verify(token,process.env.SECRET_TOKEN_KEY,(err,decoded)=>{
+        if(err){
+          return res.status(401).send({message : 'forbidden access'})
+        }
+        req.decoded = decoded
+        next()
+      })
+      // next()
+    }
+
+
+
+
     //    Users Api       //
 
     app.get('/users/:email',async(req,res)=>{
@@ -53,7 +93,7 @@ async function run() {
       res.send(result)
     })
 
-    app.get("/users", async (req, res) => {
+    app.get("/users",verifyToken, async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result);
     });
