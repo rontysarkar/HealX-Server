@@ -66,17 +66,28 @@ async function run() {
     const verifyToken = (req,res,next) =>{
       console.log('inside verify token ', req.headers.authorization.split(' ')[1])
       if(!req.headers.authorization){
-        return res.status(401).send({message:'forbidden access'})
+        return res.status(401).send({message:'Unauthorized access'})
       }
       const token = req.headers.authorization.split(' ')[1];
       jwt.verify(token,process.env.SECRET_TOKEN_KEY,(err,decoded)=>{
         if(err){
-          return res.status(401).send({message : 'forbidden access'})
+          return res.status(401).send({message : 'unauthorized access'})
         }
         req.decoded = decoded
         next()
       })
-      // next()
+    }
+
+    // verify admin 
+
+    const verifyAdmin = async(req,res,next)=>{
+      const email = req.decoded.email
+      const user = await usersCollection.findOne({email:email})
+      const isAdmin = user?.role === 'admin'
+      if(!isAdmin){
+        return res.status(403).send({message : "Forbidden access"})
+      }
+      next()
     }
 
 
@@ -84,8 +95,11 @@ async function run() {
 
     //    Users Api       //
 
-    app.get('/users/:email',async(req,res)=>{
+    app.get('/users/:email',verifyToken,async(req,res)=>{
       const query = {email: req.params.email}
+      if(req.params.email !== req.decoded.email){
+        return res.status(403).send({message : "Forbidden Access"})
+      }
       const options = {
         projection: { _id: 0, role: 1, }
       }
@@ -93,7 +107,7 @@ async function run() {
       res.send(result)
     })
 
-    app.get("/users",verifyToken, async (req, res) => {
+    app.get("/users",verifyToken,verifyAdmin, async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result);
     });
@@ -110,7 +124,6 @@ async function run() {
     });
 
     app.delete("/users/:id", async (req, res) => {
-      console.log(req.params.id,"pararmraoig")
       const query = { _id: new ObjectId(req.params.id) };
       const result = await usersCollection.deleteOne(query);
       res.send(result);
@@ -137,13 +150,13 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/category", async (req, res) => {
+    app.post("/category",verifyToken, async (req, res) => {
       const categoryInfo = req.body;
       const result = await categoryCollection.insertOne(categoryInfo);
       res.send(result);
     });
 
-    app.delete("/category/:id", async (req, res) => {
+    app.delete("/category/:id",verifyToken,verifyAdmin, async (req, res) => {
       const query = { _id: new ObjectId(req.params.id) };
       const result = await categoryCollection.deleteOne(query);
       res.send(result);
@@ -151,7 +164,7 @@ async function run() {
 
     //  advertise  api
 
-    app.get("/advertise", async (req, res) => {
+    app.get("/advertise",verifyToken, async (req, res) => {
       const { email } = req.query;
       let query = {};
       if (email) {
@@ -161,7 +174,7 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/advertise",async(req,res)=>{
+    app.post("/advertise",verifyToken,async(req,res)=>{
       const data = req.body;
       const doc = {
         ...data
@@ -170,7 +183,7 @@ async function run() {
       res.send(result)
     })
 
-    app.patch("/advertise", async (req, res) => {
+    app.patch("/advertise",verifyToken, async (req, res) => {
       const data = req.body;
       const filter = { _id: new ObjectId(data.id) };
       const doc = {
@@ -182,7 +195,7 @@ async function run() {
       res.send(result)
     });
 
-    app.delete("/advertise/:id", async (req, res) => {
+    app.delete("/advertise/:id",verifyToken, async (req, res) => {
       const query = { _id: new ObjectId(req.params.id) };
       const result = await advertiseCollection.deleteOne(query);
       res.send(result);
