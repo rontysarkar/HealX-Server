@@ -13,8 +13,8 @@ app.use(
     origin: [
       "http://localhost:5174",
       "http://localhost:5173",
-      // "https://cardoctor-bd.web.app",
-      // "https://cardoctor-bd.firebaseapp.com",
+      "https://healx-22031.web.app",
+     
     ],
   })
 );
@@ -95,11 +95,11 @@ async function run() {
 
     //    Users Api       //
 
-    app.get('/users/:email',verifyToken,async(req,res)=>{
+    app.get('/users/:email',async(req,res)=>{
       const query = {email: req.params.email}
-      if(req.params.email !== req.decoded.email){
-        return res.status(403).send({message : "Forbidden Access"})
-      }
+      // if(req.params.email !== req.decoded.email){
+      //   return res.status(403).send({message : "Forbidden Access"})
+      // }
       const options = {
         projection: { _id: 0, role: 1, }
       }
@@ -305,14 +305,67 @@ async function run() {
     })
 
 
+    // admin status 
+
+    app.get('/admin-status',verifyToken,verifyAdmin,async(req,res)=>{
+      const users = await usersCollection.estimatedDocumentCount();
+      const medicines = await medicineCollection.estimatedDocumentCount();
+      const orders = await paymentsCollection.estimatedDocumentCount();
+
+      // const payments = await paymentsCollection.find().toArray()
+      // const revenue = payments.reduce((total,pay) =>total + pay.price,0)
+
+      const result = await paymentsCollection.aggregate([
+        {
+          $group:{
+            _id:null,
+            totalRevenue:{
+              $sum :'$price'
+            }
+          }
+        }
+      ]).toArray()
+
+      const revenue = result.length > 0 ? result[0].totalRevenue : 0;
+
+      res.send({
+        users,
+        medicines,
+        orders,
+        revenue
+      })
+    })
+
+    // use aggregate pipeline
+    app.get('/order-stats',async(req,res)=>{
+      const singleMedicine = await paymentsCollection.aggregate([
+        {
+          $unwind:'$medicineIds'
+        }
+        
+      ]).toArray()
+      const query = {_id:{
+        $in: singleMedicine.map(id=> new ObjectId(id.medicineIds))
+      }}
+
+      const result = await medicineCollection.find(query).toArray()
+
+      res.send(result)
+
+    })
+
+
+
+
+
 
 
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
+    // await client.db("admin").command({ ping: 1 });
+    // console.log(
+    //   "Pinged your deployment. You successfully connected to MongoDB!"
+    // );
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
