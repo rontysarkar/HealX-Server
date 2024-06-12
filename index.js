@@ -49,6 +49,7 @@ async function run() {
     const usersCollection = client.db("HealXDB").collection("users");
     const categoryCollection = client.db("HealXDB").collection("category");
     const advertiseCollection = client.db("HealXDB").collection("advertise");
+    const paymentsCollection = client.db("HealXDB").collection("payments");
 
 
     //  JWT toke api 
@@ -163,7 +164,7 @@ async function run() {
 
     //  advertise  api
 
-    app.get("/advertise",verifyToken, async (req, res) => {
+    app.get("/advertise", async (req, res) => {
       const { email } = req.query;
       let query = {};
       if (email) {
@@ -182,7 +183,7 @@ async function run() {
       res.send(result)
     })
 
-    app.patch("/advertise",verifyToken, async (req, res) => {
+    app.patch("/advertise", async (req, res) => {
       const data = req.body;
       const filter = { _id: new ObjectId(data.id) };
       const doc = {
@@ -194,7 +195,7 @@ async function run() {
       res.send(result)
     });
 
-    app.delete("/advertise/:id",verifyToken, async (req, res) => {
+    app.delete("/advertise/:id", async (req, res) => {
       const query = { _id: new ObjectId(req.params.id) };
       const result = await advertiseCollection.deleteOne(query);
       res.send(result);
@@ -266,6 +267,46 @@ async function run() {
         clientSecret: paymentIntent.client_secret,
       });
     })
+
+    app.get('/payments',async(req,res)=>{
+      const result = await paymentsCollection.find().toArray()
+      res.send(result)
+    })
+
+
+    app.get('/payments/:email',async(req,res)=>{
+      const query = {email: req.params.email}
+      const result = await paymentsCollection.find(query).toArray()
+      res.send(result)
+    })
+
+
+    app.post('/payment',async(req,res)=>{
+      const paymentData = req.body;
+      const paymentResult = await paymentsCollection.insertOne(paymentData)
+
+      // delete cart 
+      // const query = {_id: new ObjectId(id)}
+      const query = {_id:{
+        $in: paymentData.cartIds.map(id=> new ObjectId(id))
+      }}
+      const deletedResult = await cartCollection.deleteMany(query)
+
+      res.send({paymentResult, deletedResult})
+    })
+
+    app.patch('/payments/:id',async(req,res)=>{
+      const query = {_id: new ObjectId(req.params.id)}
+      const doc = {
+        $set:{ status: 'paid'}
+      }
+      const result = await paymentsCollection.updateOne(query,doc)
+      res.send(result)
+    })
+
+
+
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
